@@ -1,4 +1,3 @@
-// import { geoJSON } from "leaflet";
 import React, { useEffect, useState, useRef } from "react";
 // import { Map } from "react-leaflet";
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from "react-leaflet";
@@ -7,7 +6,8 @@ function MapCompo() {
   const [data, setData] = useState();
   const [user, setUser] = useState([]);
   const [updated, setUpdated] = useState([]);
-  const [dataByID, setDataByID] = useState([]);
+  const [dataByID, setDataByID] = useState();
+
   async function getUser() {
     let ref = [];
     let response = await fetch("https://kyupid-api.vercel.app/api/users");
@@ -35,14 +35,10 @@ function MapCompo() {
         }
         if (element.is_pro_user) {
           info[element.area_id] = { ...info[element.area_id], pro: 1 };
-          // info[element.area_id].push({ pro: 1 });
         } else {
-          // info[element.area_id].push({ pro: 0 });
           info[element.area_id] = { ...info[element.area_id], pro: 2 };
         }
-        // info[element.area_id].push({ length: 1 });
         info[element.area_id] = { ...info[element.area_id], user: 1 };
-        // info[element.area_id].push({ area_id: element.area_id });
         info[element.area_id] = {
           ...info[element.area_id],
           area_id: element.area_id,
@@ -91,25 +87,59 @@ function MapCompo() {
     // dataByID.forEach((element) => console.log(element, typeof element));
     // console.log("results", result);
     // debugger;
-    let result = dataByID.find(
-      (element) => element.area_id == feature.properties.area_id
-    );
-    // console.log("result", result);
-    if (
-      feature.properties &&
-      feature.properties.name &&
-      feature.properties.area_id &&
-      feature.properties.pin_code &&
-      result
-    ) {
-      let detalis = `"Area-name": ${feature.properties.name} "Area-ID": ${feature.properties.area_id} "Area pin-code": ${feature.properties.pin_code} "User":${result?.user} "Pro-User":${result?.pro} "Male":${result?.gender.male} "Female":${result?.gender.female} `;
-      layer.bindPopup(detalis);
+
+    // console.log("feature", typeof feature.properties);
+    let mix = [];
+    console.log("type of databyId", typeof dataByID);
+    if (dataByID && feature.properties) {
+      let ref = [];
+      ref.push(feature.properties);
+      ref.map((element) => {
+        let result = dataByID.find((ele) => ele.area_id == element.area_id);
+        if (result) {
+          element = { ...element, result };
+          mix.push(element);
+        }
+      });
+      console.log("dataUpdatedMIX", mix);
+      if (mix && mix.length > 0 && mix[0].result) {
+        let detalis = `"Area-name": ${mix[0].name},
+        "Area-ID": ${mix[0].area_id},
+        "Area pin-code": ${mix[0].pin_code},
+        "User":${mix[0].result.user},
+        "Pro-User":${mix[0].result.pro},
+        "Male/Female":${mix[0].result.gender.male}/${mix[0].result.gender.female}`;
+        layer.bindPopup(detalis);
+      }
     }
+
+    // if (
+    //   feature.properties &&
+    //   feature.properties.name &&
+    //   feature.properties.area_id &&
+    //   feature.properties.pin_code
+    // ) {
+    //   // let result = dataByID.find(
+    //   //   (element) => element.area_id == feature.properties.area_id
+    //   // );
+
+    //   // let detalis = `"Area-name": ${feature.properties.name},
+    //   // "Area-ID": ${feature.properties.area_id},
+    //   // "Area pin-code": ${feature.properties.pin_code},
+    //   // "User":${result?.user},
+    //   // "Pro-User":${result?.pro},
+    //   // "Male/Female":${result?.gender.male}/${result?.gender.female}`;
+
+    //   let detalis = `"Area-name": ${feature.properties.name},
+    //     "Area-ID": ${feature.properties.area_id},
+    //     "Area pin-code": ${feature.properties.pin_code}`;
+    //   layer.bindPopup(detalis);
+    // }
   }
 
   return (
     <div>
-      {data && (
+      {data && dataByID && (
         <MapContainer
           style={{ height: "100vh" }}
           center={position}
@@ -129,6 +159,7 @@ function MapCompo() {
             fillColor="green"
             weight={1}
             onEachFeature={onEachFeature}
+            onclick={(event) => event.stopPropagation()}
           />
           {/* <Marker position={position}>
             <Popup>
@@ -143,21 +174,4 @@ function MapCompo() {
 
 export default MapCompo;
 
-//  <MapContainer center={position} zoom={12}>
-//    <TileLayer
-//      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-//      attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-//    />
-//  </MapContainer>;
-
-//  <MapContainer center={position} zoom={12} scrollWheelZoom={false}>
-//    <TileLayer
-//      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-//      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-//    />
-//    <Marker position={position}>
-//      <Popup>
-//        A pretty CSS3 popup. <br /> Easily customizable.
-//      </Popup>
-//    </Marker>
-//  </MapContainer>;
+// https://www.youtube.com/watch?v=cCOL7MC4Pl0&t=513s
