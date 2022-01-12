@@ -29,45 +29,35 @@ function MapCompo() {
   // collecting data by its AreaID
   function updateUser() {
     if (user.length > 0) {
-      let info = [];
-
-      user[0]?.users.map((element, i) => {
-        if (
-          Object.keys(info) == [] ||
-          Object.keys(info).findIndex((ele) => ele == element.area_id) < 0
-        ) {
-          if (element.gender == "M") {
-            info[element.area_id] = { gender: { male: 1, female: 0 } };
-          } else {
-            info[element.area_id] = { gender: { male: 0, female: 1 } };
-          }
-          if (element.is_pro_user) {
-            info[element.area_id] = { ...info[element.area_id], pro: 1 };
-          } else {
-            info[element.area_id] = { ...info[element.area_id], pro: 2 };
-          }
-          info[element.area_id] = { ...info[element.area_id], user: 1 };
-          info[element.area_id] = {
-            ...info[element.area_id],
+      let ref = {};
+      user[0]?.users.forEach((element) => {
+        if (!ref[element.area_id]) {
+          ref[element.area_id] = {
             area_id: element.area_id,
+            count: 1,
+            male: element.gender == "M" ? 1 : 0,
+            female: element.gender == "F" ? 1 : 0,
+            pro: element.is_pro_user ? 1 : 0,
           };
         } else {
-          if (element.gender == "M") {
-            info[element.area_id].gender.male = ++info[element.area_id].gender
-              .male;
-          } else {
-            info[element.area_id].gender.female = ++info[element.area_id].gender
-              .female;
-          }
-          if (element.is_pro_user) {
-            info[element.area_id].pro = ++info[element.area_id].pro;
-          }
-
-          info[element.area_id].user = ++info[element.area_id].user;
+          ref[element.area_id] = {
+            ...ref[element.area_id],
+            count: ref[element.area_id].count + 1,
+            male:
+              element.gender == "M"
+                ? ref[element.area_id].male + 1
+                : ref[element.area_id].male,
+            female:
+              element.gender == "F"
+                ? ref[element.area_id].female + 1
+                : ref[element.area_id].female,
+            pro: element.is_pro_user
+              ? ref[element.area_id].pro + 1
+              : ref[element.area_id].pro,
+          };
         }
       });
-      // console.log("OBject array", Object.values(info));
-      setDataByID(Object.values(info));
+      setDataByID(ref);
     }
   }
 
@@ -82,16 +72,16 @@ function MapCompo() {
 
   // map the updated data by POP-UP
   function onEachFeature(feature, layer) {
-    let result = dataByID.find(
-      (element) => element.area_id == feature.properties.area_id
-    );
-    if (feature.properties && result) {
+    if (feature.properties && dataByID) {
       let detalis = `"Area-name": ${feature.properties.name},
       "Area-ID": ${feature.properties.area_id},
       "Area pin-code": ${feature.properties.pin_code},
-      "User":${result?.user},
-      "Pro-User":${result?.pro},
-      "Male/Female":${result?.gender.male}/${result?.gender.female}`;
+      "User":${dataByID[feature.properties.area_id].user},
+      "Pro-User":${dataByID[feature.properties.area_id].pro},
+      "Male/Female":${dataByID[feature.properties.area_id].male}/${
+        dataByID[feature.properties.area_id].female
+      }`;
+
       layer.bindPopup(detalis);
     }
   }
@@ -114,7 +104,6 @@ function MapCompo() {
             fillColor="green"
             weight={1}
             onEachFeature={onEachFeature}
-            onclick={(event) => event.stopPropagation()}
           />
         </MapContainer>
       )}
